@@ -2,11 +2,13 @@ package com.example.cupcake.test
 
 import android.icu.text.SimpleDateFormat
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performRotaryScrollInput
+import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.testing.TestNavHostController
 import com.example.cupcake.CupcakeApp
 import com.example.cupcake.CupcakeScreen
@@ -27,7 +29,12 @@ class CupcakeScreenNavigationTest {
 
     @Before
     fun setupCupcakeNavHost() {
-        composeTestRule.setContent { CupcakeApp(navController = navController) }
+        composeTestRule.setContent {
+            navController = TestNavHostController(LocalContext.current).apply {
+                navigatorProvider.addNavigator(ComposeNavigator())
+            }
+            CupcakeApp(navController = navController)
+        }
     }
 
     @Test
@@ -47,6 +54,58 @@ class CupcakeScreenNavigationTest {
         navController.assertCurrentRouteName(CupcakeScreen.Flavor.name)
     }
 
+    @Test
+    fun cupcakeNavHost_clickBackFromFlavorScreen_navigateToStartScreen() {
+        navigateToFlavorScreen()
+        performNavigateUp()
+        navController.assertCurrentRouteName(CupcakeScreen.Start.name)
+    }
+
+    @Test
+    fun cupcakeNavHost_clickCancelButtonOnFlavorScreen_navigateToStartScreen() {
+        navigateToFlavorScreen()
+        composeTestRule.onNodeWithStringId(R.string.cancel).performClick()
+        navController.assertCurrentRouteName(CupcakeScreen.Start.name)
+    }
+
+    @Test
+    fun cupcakeNavHost_clickNextOnFlavorScreen_navigateToPickupScreen() {
+        navigateToFlavorScreen()
+        composeTestRule.onNodeWithStringId(R.string.next).performClick()
+        navController.assertCurrentRouteName(CupcakeScreen.Pickup.name)
+    }
+
+    @Test
+    fun cupcakeNavHost_clickBackOnPickupScreen_navigateToFlavorScreen() {
+        navigateToFlavorScreen()
+        performNavigateUp()
+        navController.assertCurrentRouteName(CupcakeScreen.Flavor.name)
+    }
+
+    @Test
+    fun cupcakeNavHost_clickCancelButtonOnPickupScreen_navigateToStartScreen() {
+        navigateToPickupScreen()
+        composeTestRule.onNodeWithStringId(R.string.cancel).performClick()
+        navController.assertCurrentRouteName(CupcakeScreen.Start.name)
+    }
+
+    @Test
+    fun cupcakeNavHost_clickNextOnPickupScreen_navigatesToSummaryScreen() {
+        navigateToPickupScreen()
+        composeTestRule.onNodeWithText(getFormattedDate())
+            .performClick()
+        composeTestRule.onNodeWithStringId(R.string.next)
+            .performClick()
+        navController.assertCurrentRouteName(CupcakeScreen.Summary.name)
+    }
+
+    @Test
+    fun cupcakeNavHost_clickCancelButtonOnSummaryScreen_navigateToStartScreen() {
+        navigateToSummaryScreen()
+        composeTestRule.onNodeWithStringId(R.string.cancel).performClick()
+        navController.assertCurrentRouteName(CupcakeScreen.Start.name)
+    }
+
     private fun navigateToFlavorScreen() {
         composeTestRule.onNodeWithStringId(R.string.one_cupcake).performClick()
         composeTestRule.onNodeWithStringId(R.string.chocolate).performClick()
@@ -63,23 +122,18 @@ class CupcakeScreenNavigationTest {
         val formatter = SimpleDateFormat("E MMM d", Locale.getDefault())
         return formatter.format(calendar.time)
     }
+
     fun navigateToSummaryScreen() {
         navigateToPickupScreen()
         composeTestRule.onNodeWithText(getFormattedDate()).performClick()
         composeTestRule.onNodeWithStringId(R.string.next).performClick()
     }
-//what's the difference between using line 69 and lines 73 & 74
-    fun performNavigateUp() {
+
+    private fun performNavigateUp() {
         val backText = composeTestRule.activity.getString(R.string.back_button)
         composeTestRule.onNodeWithContentDescription(backText).performClick()
     }
 
-    @Test
-    fun cupcakeNavHost_clickUpFromFlavorScreen_navigateToStartScreen() {
-        //find up button
-        //click it
-
-    }
 }
 
 
